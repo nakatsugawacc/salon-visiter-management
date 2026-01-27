@@ -6,6 +6,8 @@
   let visitor = null;
   let elapsedTime = '';
   let interval;
+  let isProcessing = false;
+  let successMessage = '';
 
   $: token = $page.params.token;
   $: visitorId = visitorTokens[token];
@@ -32,36 +34,49 @@
   }
 
   function handleArrival() {
+    isProcessing = true;
     const currentToken = $page.params.token;
     const currentVisitorId = visitorTokens[currentToken];
+    
+    // updateStatus内で自動で通知が生成される
     visitors.updateStatus(currentVisitorId, '受付');
-    notifications.add({
-      visitorName: visitor.name,
-      checkpointName: '来店',
-      timestamp: new Date().toISOString()
-    });
+    
+    // ユーザーへのフィードバック
+    successMessage = '✅ 来店を確認しました。スタッフがまもなくお呼びします。';
+    setTimeout(() => {
+      isProcessing = false;
+      successMessage = '';
+    }, 3000);
   }
 
   function handleChangeDoneBeforeTreatment() {
+    isProcessing = true;
     const currentToken = $page.params.token;
     const currentVisitorId = visitorTokens[currentToken];
+    
+    // updateStatus内で自動で通知が生成される
     visitors.updateStatus(currentVisitorId, '着替え完了(施術前)');
-    notifications.addReady({
-      visitorName: visitor.name,
-      checkpointName: visitor.assignedRoom ? `施術部屋${visitor.assignedRoom}` : '',
-      timestamp: new Date().toISOString()
-    });
+    
+    successMessage = '✅ お着替え完了を確認しました。スタッフに伝わりました。';
+    setTimeout(() => {
+      isProcessing = false;
+      successMessage = '';
+    }, 3000);
   }
 
   function handleChangeDoneAfterTreatment() {
+    isProcessing = true;
     const currentToken = $page.params.token;
     const currentVisitorId = visitorTokens[currentToken];
+    
+    // updateStatus内で自動で通知が生成される
     visitors.updateStatus(currentVisitorId, '完了');
-    notifications.addTreatmentComplete({
-      visitorName: visitor.name,
-      checkpointName: visitor.assignedRoom ? `施術部屋${visitor.assignedRoom}` : '',
-      timestamp: new Date().toISOString()
-    });
+    
+    successMessage = '✅ ご利用ありがとうございました。お疲れさまでした。';
+    setTimeout(() => {
+      isProcessing = false;
+      successMessage = '';
+    }, 3000);
   }
 
   onMount(() => {
@@ -108,26 +123,47 @@
       </div>
 
       <div class="space-y-3">
+        {#if successMessage}
+          <div class="bg-green-50 border-2 border-green-500 rounded-lg p-4 text-center animate-pulse">
+            <p class="text-green-700 font-bold text-lg">{successMessage}</p>
+          </div>
+        {/if}
+
         {#if visitor.detailedStatus === '未来店'}
           <button
             on:click={handleArrival}
-            class="w-full py-3 px-4 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700 transition-colors shadow-lg"
+            disabled={isProcessing}
+            class="w-full py-3 px-4 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700 transition-colors shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            👋 来店
+            {#if isProcessing}
+              ⏳ 処理中...
+            {:else}
+              👋 来店
+            {/if}
           </button>
         {:else if visitor.detailedStatus === '受付' || visitor.detailedStatus === '入室'}
           <button
             on:click={handleChangeDoneBeforeTreatment}
-            class="w-full py-3 px-4 bg-green-600 text-white rounded-lg font-bold hover:bg-green-700 transition-colors shadow-lg"
+            disabled={isProcessing}
+            class="w-full py-3 px-4 bg-green-600 text-white rounded-lg font-bold hover:bg-green-700 transition-colors shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            ✨ お着替え完了（施術前）
+            {#if isProcessing}
+              ⏳ 処理中...
+            {:else}
+              ✨ お着替え完了（施術前）
+            {/if}
           </button>
         {:else if visitor.detailedStatus === '施術完了' || visitor.detailedStatus === '退出準備中'}
           <button
             on:click={handleChangeDoneAfterTreatment}
-            class="w-full py-3 px-4 bg-purple-600 text-white rounded-lg font-bold hover:bg-purple-700 transition-colors shadow-lg"
+            disabled={isProcessing}
+            class="w-full py-3 px-4 bg-purple-600 text-white rounded-lg font-bold hover:bg-purple-700 transition-colors shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            🎊 お着替え終了（退店前）
+            {#if isProcessing}
+              ⏳ 処理中...
+            {:else}
+              🎊 お着替え終了（退店前）
+            {/if}
           </button>
         {:else}
           <div class="bg-yellow-50 rounded-lg p-6 text-center">

@@ -196,7 +196,7 @@ function createVisitorStore() {
           if (oldStatus !== newStatus) {
             const checkpointName = getCheckpointName(visitor.currentCheckpointId);
             const notificationType = 
-              newStatus === '着替え前完了' ? 'ready' :
+              newStatus === '着替え完了(施術前)' ? 'ready' :
               newStatus === '退出準備中' ? 'treatment_complete' :
               'checkin';
             
