@@ -228,7 +228,7 @@
               ✨ お着替え完了（施術前）
             {/if}
           </button>
-        {:else if visitor.detailedStatus === '施術完了' || visitor.detailedStatus === '退出準備中'}
+        {:else if visitor.detailedStatus === '施術中' || visitor.detailedStatus === '施術完了' || visitor.detailedStatus === '退出準備中'}
           <button
             on:click={handleChangeDoneAfterTreatment}
             disabled={isProcessing}
