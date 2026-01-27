@@ -1,9 +1,50 @@
 <script>
-  import { checkpoints, visitors, notifications } from '$lib/stores/visitors';
+  import { onMount, onDestroy } from 'svelte';
+  import { checkpoints, visitors, notifications, latestCheckin } from '$lib/stores/visitors';
   import CheckpointColumn from '$lib/components/CheckpointColumn.svelte';
   import Notification from '$lib/components/Notification.svelte';
   import QRCodeDisplay from '$lib/components/QRCodeDisplay.svelte';
   import CheckinModal from '$lib/components/CheckinModal.svelte';
+
+  let lastNotificationId = 0;
+  let pollingInterval;
+
+  async function pollNotifications() {
+    try {
+      const response = await fetch('/api/notifications');
+      const data = await response.json();
+      
+      if (data.notification && data.id > lastNotificationId) {
+        lastNotificationId = data.id;
+        
+        // 通知をローカルストアに追加してポップアップを表示
+        const notification = data.notification;
+        notifications.add({
+          visitorName: notification.visitorName,
+          checkpointName: notification.checkpointName,
+          status: notification.status,
+          type: notification.type || 'checkin',
+          timestamp: notification.timestamp
+        });
+      }
+    } catch (err) {
+      console.error('Failed to poll notifications', err);
+    }
+  }
+
+  onMount(() => {
+    // 初回取得
+    pollNotifications();
+    
+    // 3秒ごとにポーリング
+    pollingInterval = setInterval(pollNotifications, 3000);
+  });
+
+  onDestroy(() => {
+    if (pollingInterval) {
+      clearInterval(pollingInterval);
+    }
+  });
 </script>
 
 <svelte:head>

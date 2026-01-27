@@ -33,7 +33,7 @@
     }
   }
 
-  function handleArrival() {
+  async function handleArrival() {
     isProcessing = true;
     const currentToken = $page.params.token;
     const currentVisitorId = visitorTokens[currentToken];
@@ -41,7 +41,7 @@
     // ステータス更新
     visitors.updateStatus(currentVisitorId, '受付');
     
-    // 通知を明示的に送出
+    // 通知をローカルストアに送出
     notifications.add({
       visitorName: visitor.name,
       checkpointName: '受付',
@@ -49,6 +49,22 @@
       type: 'checkin',
       timestamp: new Date().toISOString()
     });
+    
+    // API 経由でサーバーに通知を送信（異なるデバイス間で共有）
+    try {
+      await fetch('/api/notifications', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          visitorName: visitor.name,
+          checkpointName: '受付',
+          status: '受付',
+          type: 'checkin'
+        })
+      });
+    } catch (err) {
+      console.error('Failed to send notification to server', err);
+    }
     
     // ユーザーへのフィードバック
     successMessage = '✅ 来店を確認しました。スタッフがまもなくお呼びします。';
@@ -58,7 +74,7 @@
     }, 3000);
   }
 
-  function handleChangeDoneBeforeTreatment() {
+  async function handleChangeDoneBeforeTreatment() {
     isProcessing = true;
     const currentToken = $page.params.token;
     const currentVisitorId = visitorTokens[currentToken];
@@ -66,7 +82,7 @@
     // ステータス更新
     visitors.updateStatus(currentVisitorId, '着替え完了(施術前)');
     
-    // 通知を明示的に送出
+    // 通知をローカルストアに送出
     notifications.add({
       visitorName: visitor.name,
       checkpointName: visitor.assignedRoom ? `施術部屋${visitor.assignedRoom}` : '施術準備中',
@@ -75,6 +91,22 @@
       timestamp: new Date().toISOString()
     });
     
+    // API 経由でサーバーに通知を送信
+    try {
+      await fetch('/api/notifications', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          visitorName: visitor.name,
+          checkpointName: visitor.assignedRoom ? `施術部屋${visitor.assignedRoom}` : '施術準備中',
+          status: '着替え完了(施術前)',
+          type: 'ready'
+        })
+      });
+    } catch (err) {
+      console.error('Failed to send notification to server', err);
+    }
+    
     successMessage = '✅ お着替え完了を確認しました。スタッフに伝わりました。';
     setTimeout(() => {
       isProcessing = false;
@@ -82,7 +114,7 @@
     }, 3000);
   }
 
-  function handleChangeDoneAfterTreatment() {
+  async function handleChangeDoneAfterTreatment() {
     isProcessing = true;
     const currentToken = $page.params.token;
     const currentVisitorId = visitorTokens[currentToken];
@@ -90,7 +122,7 @@
     // ステータス更新
     visitors.updateStatus(currentVisitorId, '完了');
     
-    // 通知を明示的に送出
+    // 通知をローカルストアに送出
     notifications.add({
       visitorName: visitor.name,
       checkpointName: '完了',
@@ -98,6 +130,22 @@
       type: 'treatment_complete',
       timestamp: new Date().toISOString()
     });
+    
+    // API 経由でサーバーに通知を送信
+    try {
+      await fetch('/api/notifications', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          visitorName: visitor.name,
+          checkpointName: '完了',
+          status: '完了',
+          type: 'treatment_complete'
+        })
+      });
+    } catch (err) {
+      console.error('Failed to send notification to server', err);
+    }
     
     successMessage = '✅ ご利用ありがとうございました。お疲れさまでした。';
     setTimeout(() => {
