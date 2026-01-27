@@ -7,6 +7,7 @@
   import CheckinModal from '$lib/components/CheckinModal.svelte';
 
   let lastNotificationId = 0;
+  let lastVisitorsUpdate = 0;
   let pollingInterval;
 
   async function pollNotifications() {
@@ -32,12 +33,34 @@
     }
   }
 
+  async function pollVisitors() {
+    try {
+      const response = await fetch('/api/visitors');
+      const data = await response.json();
+      
+      if (data.visitors && data.lastUpdate > lastVisitorsUpdate) {
+        lastVisitorsUpdate = data.lastUpdate;
+        // 訪問者データを更新
+        visitors.set(data.visitors);
+      }
+    } catch (err) {
+      console.error('Failed to poll visitors', err);
+    }
+  }
+
+  async function pollData() {
+    await Promise.all([
+      pollNotifications(),
+      pollVisitors()
+    ]);
+  }
+
   onMount(() => {
     // 初回取得
-    pollNotifications();
+    pollData();
     
     // 3秒ごとにポーリング
-    pollingInterval = setInterval(pollNotifications, 3000);
+    pollingInterval = setInterval(pollData, 3000);
   });
 
   onDestroy(() => {

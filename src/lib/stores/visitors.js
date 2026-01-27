@@ -140,6 +140,12 @@ function createVisitorStore() {
 
   return {
     subscribe,
+    set: (newVisitors) => {
+      set(newVisitors);
+      if (browser) {
+        localStorage.setItem('visitors', JSON.stringify(newVisitors));
+      }
+    },
     moveVisitor: (visitorId, checkpointId) => {
       update(visitors => {
         const visitor = visitors.find(v => v.id === visitorId);
@@ -159,7 +165,8 @@ function createVisitorStore() {
         return visitors;
       });
     },
-    updateStatus: (visitorId, newStatus, assignRoom = null) => {
+    updateStatus: async (visitorId, newStatus, assignRoom = null) => {
+      let updatedVisitors;
       update(visitors => {
         const visitor = visitors.find(v => v.id === visitorId);
         if (visitor) {
@@ -195,8 +202,22 @@ function createVisitorStore() {
         if (browser) {
           localStorage.setItem('visitors', JSON.stringify(visitors));
         }
+        updatedVisitors = visitors;
         return visitors;
       });
+      
+      // API経由でサーバーに送信
+      if (browser) {
+        try {
+          await fetch('/api/visitors', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ visitors: updatedVisitors })
+          });
+        } catch (err) {
+          console.error('Failed to sync visitors to server', err);
+        }
+      }
     },
     markReady: (visitorId) => {
       update(visitors => {
@@ -232,11 +253,22 @@ function createVisitorStore() {
         return visitors;
       });
     },
-    reset: () => {
+    reset: async () => {
       set(initialVisitors);
       latestCheckin.set(null);
       if (browser) {
         localStorage.setItem('visitors', JSON.stringify(initialVisitors));
+        
+        // API経由でサーバーに送信
+        try {
+          await fetch('/api/visitors', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ visitors: initialVisitors })
+          });
+        } catch (err) {
+          console.error('Failed to sync reset to server', err);
+        }
       }
     }
   };
