@@ -83,6 +83,18 @@ export const visitorTokens = {
   'visitor-4-token': 4
 };
 
+// チェックポイントIDから名前を取得
+function getCheckpointName(checkpointId) {
+  const names = {
+    1: '受付',
+    2: '施術部屋A',
+    3: '施術部屋B',
+    4: '施術部屋C',
+    5: '完了'
+  };
+  return names[checkpointId] || '不明';
+}
+
 // 来店者ストア
 function createVisitorStore() {
   const { subscribe, set, update } = writable(initialVisitors);
@@ -112,10 +124,29 @@ function createVisitorStore() {
     }
 
     // localStorage変更を監視（別タブでの更新を検知）
+    let previousVisitors = initialVisitors;
     window.addEventListener('storage', (e) => {
       if (e.key === 'visitors' && e.newValue) {
         try {
-          set(JSON.parse(e.newValue));
+          const newVisitors = JSON.parse(e.newValue);
+          set(newVisitors);
+          
+          // 他タブでの変更を検知して通知を送出
+          newVisitors.forEach(newVisitor => {
+            const oldVisitor = previousVisitors.find(v => v.id === newVisitor.id);
+            if (oldVisitor && oldVisitor.detailedStatus !== newVisitor.detailedStatus) {
+              // ステータス変更を検知 → 通知を自動生成
+              const checkpointName = getCheckpointName(newVisitor.currentCheckpointId);
+              notifications.add({
+                visitorName: newVisitor.name,
+                checkpointName: checkpointName,
+                status: newVisitor.detailedStatus,
+                timestamp: new Date().toISOString()
+              });
+            }
+          });
+          
+          previousVisitors = newVisitors;
         } catch (err) {
           console.error('Failed to parse storage event', err);
         }
@@ -148,6 +179,7 @@ function createVisitorStore() {
       update(visitors => {
         const visitor = visitors.find(v => v.id === visitorId);
         if (visitor) {
+          const oldStatus = visitor.detailedStatus;
           visitor.detailedStatus = newStatus;
           visitor.status = '来店中';
           
@@ -175,6 +207,23 @@ function createVisitorStore() {
             status: newStatus,
             timestamp: new Date().toISOString()
           });
+          
+          // ステータス変更を通知（oldStatus と newStatus が異なる場合のみ）
+          if (oldStatus !== newStatus) {
+            const checkpointName = getCheckpointName(visitor.currentCheckpointId);
+            const notificationType = 
+              newStatus === '着替え前完了' ? 'ready' :
+              newStatus === '退出準備中' ? 'treatment_complete' :
+              'checkin';
+            
+            notifications.add({
+              visitorName: visitor.name,
+              checkpointName: checkpointName,
+              status: newStatus,
+              type: notificationType,
+              timestamp: new Date().toISOString()
+            });
+          }
         }
         if (browser) {
           localStorage.setItem('visitors', JSON.stringify(visitors));
