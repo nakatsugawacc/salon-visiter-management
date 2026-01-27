@@ -179,16 +179,25 @@ function createVisitorStore() {
             visitor.qrScannedAt = new Date().toISOString();
           }
           
-          // 施術部屋の割り当て
-          if (assignRoom && !visitor.assignedRoom) {
+          // チェックポイント更新ロジック
+          if (newStatus === '受付') {
+            visitor.currentCheckpointId = 1;
+          } else if (assignRoom && !visitor.assignedRoom) {
+            // 施術部屋の割り当て
             visitor.assignedRoom = assignRoom;
-            // チェックポイントを施術部屋に変更
             const roomId = assignRoom === 'A' ? 2 : assignRoom === 'B' ? 3 : 4;
             visitor.currentCheckpointId = roomId;
-          }
-          
-          // 完了時
-          if (newStatus === '完了') {
+          } else if (newStatus === '入室' && visitor.assignedRoom) {
+            // 入室時は割り当て済みの部屋のチェックポイント
+            const roomId = visitor.assignedRoom === 'A' ? 2 : visitor.assignedRoom === 'B' ? 3 : 4;
+            visitor.currentCheckpointId = roomId;
+          } else if (newStatus === '着替え完了(施術前)' || newStatus === '施術中' || newStatus === '施術完了' || newStatus === '退出準備中') {
+            // 施術関連ステータスは割り当て済みの部屋を維持
+            if (visitor.assignedRoom) {
+              const roomId = visitor.assignedRoom === 'A' ? 2 : visitor.assignedRoom === 'B' ? 3 : 4;
+              visitor.currentCheckpointId = roomId;
+            }
+          } else if (newStatus === '完了') {
             visitor.status = '完了';
             visitor.currentCheckpointId = 5;
           }
