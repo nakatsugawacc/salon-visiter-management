@@ -38,8 +38,17 @@
     const currentToken = $page.params.token;
     const currentVisitorId = visitorTokens[currentToken];
     
-    // updateStatus内で自動で通知が生成される
+    // ステータス更新
     visitors.updateStatus(currentVisitorId, '受付');
+    
+    // 通知を明示的に送出
+    notifications.add({
+      visitorName: visitor.name,
+      checkpointName: '受付',
+      status: '受付',
+      type: 'checkin',
+      timestamp: new Date().toISOString()
+    });
     
     // ユーザーへのフィードバック
     successMessage = '✅ 来店を確認しました。スタッフがまもなくお呼びします。';
@@ -54,8 +63,17 @@
     const currentToken = $page.params.token;
     const currentVisitorId = visitorTokens[currentToken];
     
-    // updateStatus内で自動で通知が生成される
+    // ステータス更新
     visitors.updateStatus(currentVisitorId, '着替え完了(施術前)');
+    
+    // 通知を明示的に送出
+    notifications.add({
+      visitorName: visitor.name,
+      checkpointName: visitor.assignedRoom ? `施術部屋${visitor.assignedRoom}` : '施術準備中',
+      status: '着替え完了(施術前)',
+      type: 'ready',
+      timestamp: new Date().toISOString()
+    });
     
     successMessage = '✅ お着替え完了を確認しました。スタッフに伝わりました。';
     setTimeout(() => {
@@ -69,8 +87,17 @@
     const currentToken = $page.params.token;
     const currentVisitorId = visitorTokens[currentToken];
     
-    // updateStatus内で自動で通知が生成される
+    // ステータス更新
     visitors.updateStatus(currentVisitorId, '完了');
+    
+    // 通知を明示的に送出
+    notifications.add({
+      visitorName: visitor.name,
+      checkpointName: '完了',
+      status: '完了',
+      type: 'treatment_complete',
+      timestamp: new Date().toISOString()
+    });
     
     successMessage = '✅ ご利用ありがとうございました。お疲れさまでした。';
     setTimeout(() => {

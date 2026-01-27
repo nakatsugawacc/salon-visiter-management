@@ -191,23 +191,6 @@ function createVisitorStore() {
             status: newStatus,
             timestamp: new Date().toISOString()
           });
-          
-          // ステータス変更を通知（oldStatus と newStatus が異なる場合のみ）
-          if (oldStatus !== newStatus) {
-            const checkpointName = getCheckpointName(visitor.currentCheckpointId);
-            const notificationType = 
-              newStatus === '着替え完了(施術前)' ? 'ready' :
-              newStatus === '退出準備中' ? 'treatment_complete' :
-              'checkin';
-            
-            notifications.add({
-              visitorName: visitor.name,
-              checkpointName: checkpointName,
-              status: newStatus,
-              type: notificationType,
-              timestamp: new Date().toISOString()
-            });
-          }
         }
         if (browser) {
           localStorage.setItem('visitors', JSON.stringify(visitors));
