@@ -251,6 +251,28 @@ export const latestCheckin = writable(null);
 function createNotificationStore() {
   const { subscribe, update } = writable([]);
 
+  // ブラウザ環境で storage イベントを監視
+  if (browser) {
+    window.addEventListener('storage', (e) => {
+      if (e.key === 'latest_notification' && e.newValue) {
+        try {
+          const notification = JSON.parse(e.newValue);
+          const id = Date.now();
+          const entry = { ...notification, id };
+          update(notifications => [...notifications, entry]);
+          latestCheckin.set(entry);
+          
+          // 5秒後に自動削除
+          setTimeout(() => {
+            update(notifications => notifications.filter(n => n.id !== id));
+          }, 5000);
+        } catch (err) {
+          console.error('Failed to parse notification event', err);
+        }
+      }
+    });
+  }
+
   return {
     subscribe,
     add: (notification) => {
@@ -258,6 +280,11 @@ function createNotificationStore() {
       const entry = { ...notification, id };
       update(notifications => [...notifications, entry]);
       latestCheckin.set(entry);
+      
+      // localStorage に通知を保存（他タブで同期）
+      if (browser) {
+        localStorage.setItem('latest_notification', JSON.stringify(notification));
+      }
       
       // 5秒後に自動削除
       setTimeout(() => {
@@ -270,6 +297,11 @@ function createNotificationStore() {
       update(notifications => [...notifications, entry]);
       latestCheckin.set(entry);
       
+      // localStorage に通知を保存（他タブで同期）
+      if (browser) {
+        localStorage.setItem('latest_notification', JSON.stringify({ ...notification, type: 'ready' }));
+      }
+      
       // 5秒後に自動削除
       setTimeout(() => {
         update(notifications => notifications.filter(n => n.id !== id));
@@ -280,6 +312,11 @@ function createNotificationStore() {
       const entry = { ...notification, id, type: 'treatment_complete' };
       update(notifications => [...notifications, entry]);
       latestCheckin.set(entry);
+      
+      // localStorage に通知を保存（他タブで同期）
+      if (browser) {
+        localStorage.setItem('latest_notification', JSON.stringify({ ...notification, type: 'treatment_complete' }));
+      }
       
       // 5秒後に自動削除
       setTimeout(() => {
