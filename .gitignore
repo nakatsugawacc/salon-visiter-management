@@ -2,6 +2,7 @@ node_modules
 .DS_Store
 dist
 .svelte-kit
+.vercel/output
 .env
 .env.*
 !.env.example
