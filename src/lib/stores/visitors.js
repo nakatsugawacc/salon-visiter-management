@@ -130,22 +130,6 @@ function createVisitorStore() {
         try {
           const newVisitors = JSON.parse(e.newValue);
           set(newVisitors);
-          
-          // 他タブでの変更を検知して通知を送出
-          newVisitors.forEach(newVisitor => {
-            const oldVisitor = previousVisitors.find(v => v.id === newVisitor.id);
-            if (oldVisitor && oldVisitor.detailedStatus !== newVisitor.detailedStatus) {
-              // ステータス変更を検知 → 通知を自動生成
-              const checkpointName = getCheckpointName(newVisitor.currentCheckpointId);
-              notifications.add({
-                visitorName: newVisitor.name,
-                checkpointName: checkpointName,
-                status: newVisitor.detailedStatus,
-                timestamp: new Date().toISOString()
-              });
-            }
-          });
-          
           previousVisitors = newVisitors;
         } catch (err) {
           console.error('Failed to parse storage event', err);
