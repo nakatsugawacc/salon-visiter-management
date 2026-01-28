@@ -5,10 +5,17 @@ let visitors = null;
 let lastUpdate = Date.now();
 
 export async function GET() {
-  return json({
-    visitors,
-    lastUpdate
-  });
+  return json(
+    {
+      visitors,
+      lastUpdate
+    },
+    {
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0'
+      }
+    }
+  );
 }
 
 export async function POST({ request }) {

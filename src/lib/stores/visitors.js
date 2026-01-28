@@ -266,6 +266,8 @@ function createVisitorStore() {
       set(initialVisitors);
       latestCheckin.set(null);
       if (browser) {
+        // localStorageを完全にクリア
+        localStorage.clear();
         localStorage.setItem('visitors', JSON.stringify(initialVisitors));
         
         // API経由でサーバーに送信
@@ -278,6 +280,17 @@ function createVisitorStore() {
         } catch (err) {
           console.error('Failed to sync reset to server', err);
         }
+        
+        // ブラウザキャッシュをクリア
+        if ('caches' in window) {
+          const cacheNames = await caches.keys();
+          await Promise.all(
+            cacheNames.map(cacheName => caches.delete(cacheName))
+          );
+        }
+        
+        // ページをリロード
+        window.location.reload();
       }
     }
   };
