@@ -52,36 +52,34 @@
     const currentToken = $page.params.token;
     const currentVisitorId = visitorTokens[currentToken];
     
-    // ステータス更新
-    await visitors.updateStatus(currentVisitorId, '受付');
-    
-    // サーバーから最新状態を取得（即座に反映）
-    await fetchLatestData();
-    
-    // 通知をローカルストアに送出
-    notifications.add({
+    // 通知を先に送信（visitor情報が確実に存在する時点で）
+    const notificationData = {
       visitorName: visitor.name,
       checkpointName: '受付',
       status: '受付',
       type: 'checkin',
       timestamp: new Date().toISOString()
-    });
+    };
+    
+    // 通知をローカルストアに送出
+    notifications.add(notificationData);
     
     // API 経由でサーバーに通知を送信（異なるデバイス間で共有）
     try {
       await fetch('/api/notifications', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          visitorName: visitor.name,
-          checkpointName: '受付',
-          status: '受付',
-          type: 'checkin'
-        })
+        body: JSON.stringify(notificationData)
       });
     } catch (err) {
       console.error('Failed to send notification to server', err);
     }
+    
+    // ステータス更新
+    await visitors.updateStatus(currentVisitorId, '受付');
+    
+    // サーバーから最新状態を取得（即座に反映）
+    await fetchLatestData();
     
     // ユーザーへのフィードバック
     successMessage = '✅ 来店を確認しました。スタッフがまもなくお呼びします。';
@@ -96,36 +94,34 @@
     const currentToken = $page.params.token;
     const currentVisitorId = visitorTokens[currentToken];
     
-    // ステータス更新
-    await visitors.updateStatus(currentVisitorId, '着替え完了(施術前)');
-    
-    // サーバーから最新状態を取得（即座に反映）
-    await fetchLatestData();
-    
-    // 通知をローカルストアに送出
-    notifications.add({
+    // 通知を先に送信（visitor情報が確実に存在する時点で）
+    const notificationData = {
       visitorName: visitor.name,
       checkpointName: visitor.assignedRoom ? `施術部屋${visitor.assignedRoom}` : '施術準備中',
       status: '着替え完了(施術前)',
       type: 'ready',
       timestamp: new Date().toISOString()
-    });
+    };
+    
+    // 通知をローカルストアに送出
+    notifications.add(notificationData);
     
     // API 経由でサーバーに通知を送信
     try {
       await fetch('/api/notifications', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          visitorName: visitor.name,
-          checkpointName: visitor.assignedRoom ? `施術部屋${visitor.assignedRoom}` : '施術準備中',
-          status: '着替え完了(施術前)',
-          type: 'ready'
-        })
+        body: JSON.stringify(notificationData)
       });
     } catch (err) {
       console.error('Failed to send notification to server', err);
     }
+    
+    // ステータス更新
+    await visitors.updateStatus(currentVisitorId, '着替え完了(施術前)');
+    
+    // サーバーから最新状態を取得（即座に反映）
+    await fetchLatestData();
     
     successMessage = '✅ お着替え完了を確認しました。スタッフに伝わりました。';
     setTimeout(() => {
@@ -139,36 +135,34 @@
     const currentToken = $page.params.token;
     const currentVisitorId = visitorTokens[currentToken];
     
-    // ステータス更新
-    await visitors.updateStatus(currentVisitorId, '完了');
-    
-    // サーバーから最新状態を取得（即座に反映）
-    await fetchLatestData();
-    
-    // 通知をローカルストアに送出
-    notifications.add({
+    // 通知を先に送信（visitor情報が確実に存在する時点で）
+    const notificationData = {
       visitorName: visitor.name,
       checkpointName: '完了',
       status: '完了',
       type: 'treatment_complete',
       timestamp: new Date().toISOString()
-    });
+    };
+    
+    // 通知をローカルストアに送出
+    notifications.add(notificationData);
     
     // API 経由でサーバーに通知を送信
     try {
       await fetch('/api/notifications', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          visitorName: visitor.name,
-          checkpointName: '完了',
-          status: '完了',
-          type: 'treatment_complete'
-        })
+        body: JSON.stringify(notificationData)
       });
     } catch (err) {
       console.error('Failed to send notification to server', err);
     }
+    
+    // ステータス更新
+    await visitors.updateStatus(currentVisitorId, '完了');
+    
+    // サーバーから最新状態を取得（即座に反映）
+    await fetchLatestData();
     
     successMessage = '✅ ご利用ありがとうございました。お疲れさまでした。';
     setTimeout(() => {
@@ -228,9 +222,7 @@
           <div class="bg-green-50 border-2 border-green-500 rounded-lg p-4 text-center animate-pulse">
             <p class="text-green-700 font-bold text-lg">{successMessage}</p>
           </div>
-        {/if}
-
-        {#if visitor.detailedStatus === '未来店'}
+        {:else if visitor.detailedStatus === '未来店'}
           <button
             on:click={handleArrival}
             disabled={isProcessing}
