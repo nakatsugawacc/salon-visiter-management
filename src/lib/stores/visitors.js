@@ -171,15 +171,20 @@ function createVisitorStore() {
             visitor.assignedRoom = assignRoom;
             const roomId = assignRoom === 'A' ? 2 : assignRoom === 'B' ? 3 : 4;
             visitor.currentCheckpointId = roomId;
-          } else if (newStatus === '入室' && visitor.assignedRoom) {
+          } else if (newStatus === '入室') {
             // 入室時は割り当て済みの部屋のチェックポイント
-            const roomId = visitor.assignedRoom === 'A' ? 2 : visitor.assignedRoom === 'B' ? 3 : 4;
-            visitor.currentCheckpointId = roomId;
+            if (visitor.assignedRoom) {
+              const roomId = visitor.assignedRoom === 'A' ? 2 : visitor.assignedRoom === 'B' ? 3 : 4;
+              visitor.currentCheckpointId = roomId;
+            }
           } else if (newStatus === '着替え完了(施術前)' || newStatus === '施術中' || newStatus === '施術完了' || newStatus === '退出準備中') {
             // 施術関連ステータスは割り当て済みの部屋を維持
             if (visitor.assignedRoom) {
               const roomId = visitor.assignedRoom === 'A' ? 2 : visitor.assignedRoom === 'B' ? 3 : 4;
               visitor.currentCheckpointId = roomId;
+            } else {
+              // 部屋が割り当てられていない場合は受付のまま
+              visitor.currentCheckpointId = 1;
             }
           } else if (newStatus === '完了') {
             visitor.status = '完了';

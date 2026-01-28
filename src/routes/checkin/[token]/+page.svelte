@@ -138,8 +138,8 @@
     // 通知を先に送信（visitor情報が確実に存在する時点で）
     const notificationData = {
       visitorName: visitor.name,
-      checkpointName: '完了',
-      status: '完了',
+      checkpointName: '退出準備中',
+      status: '退出準備中',
       type: 'treatment_complete',
       timestamp: new Date().toISOString()
     };
@@ -158,13 +158,13 @@
       console.error('Failed to send notification to server', err);
     }
     
-    // ステータス更新
-    await visitors.updateStatus(currentVisitorId, '完了');
+    // ステータス更新（完了ではなく退出準備中）
+    await visitors.updateStatus(currentVisitorId, '退出準備中');
     
     // サーバーから最新状態を取得（即座に反映）
     await fetchLatestData();
     
-    successMessage = '✅ ご利用ありがとうございました。お疲れさまでした。';
+    successMessage = '✅ お着替え完了を確認しました。スタッフがお見送りいたします。';
     setTimeout(() => {
       isProcessing = false;
       successMessage = '';
@@ -246,7 +246,21 @@
               ✨ お着替え完了（施術前）
             {/if}
           </button>
-        {:else if visitor.detailedStatus === '着替え完了(施術前)' || visitor.detailedStatus === '施術中' || visitor.detailedStatus === '施術完了' || visitor.detailedStatus === '退出準備中'}
+        {:else if visitor.detailedStatus === '着替え完了(施術前)'}
+          <div class="bg-yellow-50 rounded-lg p-6 text-center">
+            <p class="text-gray-700 text-sm leading-relaxed">
+              そのままお待ちください<br/>
+              スタッフがまもなく施術を開始いたします
+            </p>
+          </div>
+        {:else if visitor.detailedStatus === '施術中'}
+          <div class="bg-blue-50 rounded-lg p-6 text-center">
+            <p class="text-blue-700 text-sm leading-relaxed">
+              施術中です<br/>
+              お疲れさまです
+            </p>
+          </div>
+        {:else if visitor.detailedStatus === '施術完了'}
           <button
             on:click={handleChangeDoneAfterTreatment}
             disabled={isProcessing}
@@ -258,7 +272,7 @@
               🎊 お着替え終了（退店前）
             {/if}
           </button>
-        {:else if visitor.detailedStatus === '完了'}
+        {:else if visitor.detailedStatus === '退出準備中' || visitor.detailedStatus === '完了'}
           <div class="bg-green-50 border-2 border-green-500 rounded-lg p-6 text-center">
             <div class="text-5xl mb-3">✅</div>
             <p class="text-green-700 font-bold text-xl mb-2">
