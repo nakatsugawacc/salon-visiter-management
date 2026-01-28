@@ -44,7 +44,8 @@
       const response = await fetch('/api/visitors');
       const data = await response.json();
       
-      if (data.visitors && data.lastUpdate > lastVisitorsUpdate) {
+      // visitors が null でない場合のみ更新
+      if (data.visitors && data.visitors !== null && data.lastUpdate > lastVisitorsUpdate) {
         lastVisitorsUpdate = data.lastUpdate;
         // 訪問者データを更新
         visitors.set(data.visitors);

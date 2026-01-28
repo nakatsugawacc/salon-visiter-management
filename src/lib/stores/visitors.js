@@ -11,7 +11,7 @@ export const checkpoints = writable([
 ]);
 
 // 固定の来店者データ
-const initialVisitors = [
+export const initialVisitors = [
   {
     id: 1,
     name: '山田 太郎',

@@ -1,7 +1,9 @@
 import { json } from '@sveltejs/kit';
+import { initialVisitors } from '$lib/stores/visitors';
 
 // サーバーメモリに訪問者データを保持（簡易版）
-let visitors = null;
+// 初期値として initialVisitors を設定
+let visitors = initialVisitors;
 let lastUpdate = Date.now();
 
 export async function GET() {
