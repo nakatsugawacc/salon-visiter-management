@@ -99,29 +99,19 @@ function getCheckpointName(checkpointId) {
 function createVisitorStore() {
   const { subscribe, set, update } = writable(initialVisitors);
 
-  // ブラウザ環境でlocalStorageから読み込み
+  // ブラウザ環境でサーバーから最新データを取得
   if (browser) {
-    const stored = localStorage.getItem('visitors');
-    if (stored) {
-      try {
-        const parsedVisitors = JSON.parse(stored);
-        // qrTokenが存在しない場合は初期データを使用
-        if (parsedVisitors.some(v => !v.qrToken)) {
-          console.log('古いデータ構造を検出。初期データで上書きします。');
-          set(initialVisitors);
-          localStorage.setItem('visitors', JSON.stringify(initialVisitors));
-        } else {
-          set(parsedVisitors);
+    // サーバーから最新データを取得（管理画面は常にサーバーの状態を表示）
+    fetch('/api/visitors')
+      .then(res => res.json())
+      .then(data => {
+        if (data.visitors && data.visitors !== null) {
+          set(data.visitors);
         }
-      } catch (e) {
-        console.error('Failed to parse stored visitors', e);
-        set(initialVisitors);
-        localStorage.setItem('visitors', JSON.stringify(initialVisitors));
-      }
-    } else {
-      // localStorageにデータがない場合は初期データを保存
-      localStorage.setItem('visitors', JSON.stringify(initialVisitors));
-    }
+      })
+      .catch(err => {
+        console.error('Failed to fetch initial visitors from server', err);
+      });
 
     // localStorage変更を監視（別タブでの更新を検知）
     let previousVisitors = initialVisitors;
@@ -142,9 +132,6 @@ function createVisitorStore() {
     subscribe,
     set: (newVisitors) => {
       set(newVisitors);
-      if (browser) {
-        localStorage.setItem('visitors', JSON.stringify(newVisitors));
-      }
     },
     moveVisitor: (visitorId, checkpointId) => {
       update(visitors => {
@@ -158,9 +145,6 @@ function createVisitorStore() {
             checkpointId,
             timestamp: new Date().toISOString()
           });
-        }
-        if (browser) {
-          localStorage.setItem('visitors', JSON.stringify(visitors));
         }
         return [...visitors]; // 新しい配列を作成して reactivity を確保
       });
@@ -208,9 +192,6 @@ function createVisitorStore() {
             timestamp: new Date().toISOString()
           });
         }
-        if (browser) {
-          localStorage.setItem('visitors', JSON.stringify(visitors));
-        }
         updatedVisitors = [...visitors]; // 新しい配列を作成して reactivity を確保
         return updatedVisitors;
       });
@@ -239,9 +220,6 @@ function createVisitorStore() {
             timestamp: new Date().toISOString()
           });
         }
-        if (browser) {
-          localStorage.setItem('visitors', JSON.stringify(visitors));
-        }
         return [...visitors]; // 新しい配列を作成して reactivity を確保
       });
     },
@@ -256,9 +234,6 @@ function createVisitorStore() {
             timestamp: new Date().toISOString()
           });
         }
-        if (browser) {
-          localStorage.setItem('visitors', JSON.stringify(visitors));
-        }
         return [...visitors]; // 新しい配列を作成して reactivity を確保
       });
     },
@@ -266,10 +241,6 @@ function createVisitorStore() {
       set(initialVisitors);
       latestCheckin.set(null);
       if (browser) {
-        // localStorageを完全にクリア
-        localStorage.clear();
-        localStorage.setItem('visitors', JSON.stringify(initialVisitors));
-        
         // API経由でサーバーに送信
         try {
           await fetch('/api/visitors', {
