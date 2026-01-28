@@ -6,12 +6,26 @@
   let visitor = null;
   let elapsedTime = '';
   let interval;
+  let pollingInterval;
   let isProcessing = false;
   let successMessage = '';
 
   $: token = $page.params.token;
   $: visitorId = visitorTokens[token];
   $: visitor = $visitors.find(v => v.id === visitorId);
+
+  // サーバーから最新データを取得
+  async function fetchLatestData() {
+    try {
+      const response = await fetch('/api/visitors');
+      const data = await response.json();
+      if (data.visitors && data.visitors !== null) {
+        visitors.set(data.visitors);
+      }
+    } catch (err) {
+      console.error('Failed to fetch visitors', err);
+    }
+  }
 
   // QRスキャンからの経過時間を計算
   function updateElapsedTime() {
@@ -155,12 +169,15 @@
   }
 
   onMount(() => {
+    fetchLatestData(); // 初回取得
     updateElapsedTime();
     interval = setInterval(updateElapsedTime, 10000);
+    pollingInterval = setInterval(fetchLatestData, 3000); // 3秒ごとにポーリング
   });
 
   onDestroy(() => {
     if (interval) clearInterval(interval);
+    if (pollingInterval) clearInterval(pollingInterval);
   });
 </script>
 
@@ -228,7 +245,7 @@
               ✨ お着替え完了（施術前）
             {/if}
           </button>
-        {:else if visitor.detailedStatus === '施術中' || visitor.detailedStatus === '施術完了' || visitor.detailedStatus === '退出準備中'}
+        {:else if visitor.detailedStatus === '着替え完了(施術前)' || visitor.detailedStatus === '施術中' || visitor.detailedStatus === '施術完了' || visitor.detailedStatus === '退出準備中'}
           <button
             on:click={handleChangeDoneAfterTreatment}
             disabled={isProcessing}
@@ -240,6 +257,16 @@
               🎊 お着替え終了（退店前）
             {/if}
           </button>
+        {:else if visitor.detailedStatus === '完了'}
+          <div class="bg-green-50 border-2 border-green-500 rounded-lg p-6 text-center">
+            <div class="text-5xl mb-3">✅</div>
+            <p class="text-green-700 font-bold text-xl mb-2">
+              ご利用ありがとうございました
+            </p>
+            <p class="text-gray-600 text-sm">
+              またのご来店をお待ちしております
+            </p>
+          </div>
         {:else}
           <div class="bg-yellow-50 rounded-lg p-6 text-center">
             <p class="text-gray-700 text-sm leading-relaxed">
