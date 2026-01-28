@@ -9,6 +9,7 @@
   let pollingInterval;
   let isProcessing = false;
   let successMessage = '';
+  let lastVisitorsUpdate = 0;
 
   $: token = $page.params.token;
   $: visitorId = visitorTokens[token];
@@ -16,10 +17,16 @@
 
   // サーバーから最新データを取得
   async function fetchLatestData() {
+    // 処理中はポーリングをスキップ（状態変更中の競合を防ぐ）
+    if (isProcessing) {
+      return;
+    }
+    
     try {
       const response = await fetch('/api/visitors');
       const data = await response.json();
-      if (data.visitors && data.visitors !== null) {
+      if (data.visitors && data.visitors !== null && data.lastUpdate > lastVisitorsUpdate) {
+        lastVisitorsUpdate = data.lastUpdate;
         visitors.set(data.visitors);
       }
     } catch (err) {
@@ -78,7 +85,9 @@
     // ステータス更新
     await visitors.updateStatus(currentVisitorId, '受付');
     
-    // サーバーから最新状態を取得（即座に反映）
+    // 少し待ってからサーバーから最新状態を取得（確実に更新後のデータを取得）
+    await new Promise(resolve => setTimeout(resolve, 100));
+    lastVisitorsUpdate = 0; // タイムスタンプをリセットして強制取得
     await fetchLatestData();
     
     // ユーザーへのフィードバック
@@ -120,7 +129,9 @@
     // ステータス更新
     await visitors.updateStatus(currentVisitorId, '着替え完了(施術前)');
     
-    // サーバーから最新状態を取得（即座に反映）
+    // 少し待ってからサーバーから最新状態を取得（確実に更新後のデータを取得）
+    await new Promise(resolve => setTimeout(resolve, 100));
+    lastVisitorsUpdate = 0; // タイムスタンプをリセットして強制取得
     await fetchLatestData();
     
     successMessage = '✅ お着替え完了を確認しました。スタッフに伝わりました。';
@@ -161,7 +172,9 @@
     // ステータス更新（完了ではなく退出準備中）
     await visitors.updateStatus(currentVisitorId, '退出準備中');
     
-    // サーバーから最新状態を取得（即座に反映）
+    // 少し待ってからサーバーから最新状態を取得（確実に更新後のデータを取得）
+    await new Promise(resolve => setTimeout(resolve, 100));
+    lastVisitorsUpdate = 0; // タイムスタンプをリセットして強制取得
     await fetchLatestData();
     
     successMessage = '✅ お着替え完了を確認しました。スタッフがお見送りいたします。';
