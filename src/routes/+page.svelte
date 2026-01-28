@@ -9,6 +9,7 @@
   let lastNotificationId = 0;
   let lastVisitorsUpdate = 0;
   let pollingInterval;
+  let isResetting = false;
 
   async function pollNotifications() {
     try {
@@ -34,6 +35,11 @@
   }
 
   async function pollVisitors() {
+    // リセット中はポーリングをスキップ
+    if (isResetting) {
+      return;
+    }
+
     try {
       const response = await fetch('/api/visitors');
       const data = await response.json();
@@ -89,7 +95,15 @@
             来店者数: <span class="font-bold text-blue-600">{$visitors.length}人</span>
           </div>
           <button 
-            on:click={() => visitors.reset()}
+            on:click={async () => {
+              isResetting = true;
+              lastVisitorsUpdate = 0;
+              await visitors.reset();
+              // リセット完了後、1秒待ってポーリング再開
+              setTimeout(() => {
+                isResetting = false;
+              }, 1000);
+            }}
             class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600 text-sm"
           >
             リセット
