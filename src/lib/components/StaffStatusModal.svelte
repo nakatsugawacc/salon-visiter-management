@@ -18,22 +18,40 @@
 
   const availableRooms = ['A', 'B', 'C'];
 
-  function handleRoomAssignment() {
+  async function handleRoomAssignment() {
     if (!selectedRoom) {
       alert('施術部屋を選択してください');
       return;
     }
-    visitors.updateStatus(visitor.id, '入室', selectedRoom);
-    notifications.add({
+    await visitors.updateStatus(visitor.id, '入室', selectedRoom);
+    
+    // 通知を送信
+    const notificationData = {
       visitorName: visitor.name,
       checkpointName: `施術部屋${selectedRoom}に入室`,
+      status: '入室',
+      type: 'checkin',
       timestamp: new Date().toISOString()
-    });
+    };
+    
+    notifications.add(notificationData);
+    
+    // サーバーに通知を送信
+    try {
+      await fetch('/api/notifications', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(notificationData)
+      });
+    } catch (err) {
+      console.error('Failed to send notification', err);
+    }
+    
     onClose();
   }
 
-  function handleStatusChange(newStatus) {
-    visitors.updateStatus(visitor.id, newStatus);
+  async function handleStatusChange(newStatus) {
+    await visitors.updateStatus(visitor.id, newStatus);
     
     const statusEmoji = {
       '受付': '📋',
@@ -45,15 +63,30 @@
       '完了': '🎉'
     };
 
-    const notificationType = newStatus === '着替え完了(施術前)' ? 'addReady' 
-      : newStatus === '完了' ? 'addTreatmentComplete' 
-      : 'add';
+    const notificationType = newStatus === '着替え完了(施術前)' ? 'ready' 
+      : newStatus === '完了' ? 'treatment_complete' 
+      : 'checkin';
 
-    notifications[notificationType]({
+    const notificationData = {
       visitorName: visitor.name,
       checkpointName: `${statusEmoji[newStatus]} ${newStatus}`,
+      status: newStatus,
+      type: notificationType,
       timestamp: new Date().toISOString()
-    });
+    };
+
+    notifications.add(notificationData);
+    
+    // サーバーに通知を送信
+    try {
+      await fetch('/api/notifications', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(notificationData)
+      });
+    } catch (err) {
+      console.error('Failed to send notification', err);
+    }
 
     onClose();
   }
