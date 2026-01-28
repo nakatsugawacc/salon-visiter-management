@@ -162,7 +162,7 @@ function createVisitorStore() {
         if (browser) {
           localStorage.setItem('visitors', JSON.stringify(visitors));
         }
-        return visitors;
+        return [...visitors]; // 新しい配列を作成して reactivity を確保
       });
     },
     updateStatus: async (visitorId, newStatus, assignRoom = null) => {
@@ -211,8 +211,8 @@ function createVisitorStore() {
         if (browser) {
           localStorage.setItem('visitors', JSON.stringify(visitors));
         }
-        updatedVisitors = visitors;
-        return visitors;
+        updatedVisitors = [...visitors]; // 新しい配列を作成して reactivity を確保
+        return updatedVisitors;
       });
       
       // API経由でサーバーに送信
@@ -242,7 +242,7 @@ function createVisitorStore() {
         if (browser) {
           localStorage.setItem('visitors', JSON.stringify(visitors));
         }
-        return visitors;
+        return [...visitors]; // 新しい配列を作成して reactivity を確保
       });
     },
     markTreatmentComplete: (visitorId) => {
@@ -259,7 +259,7 @@ function createVisitorStore() {
         if (browser) {
           localStorage.setItem('visitors', JSON.stringify(visitors));
         }
-        return visitors;
+        return [...visitors]; // 新しい配列を作成して reactivity を確保
       });
     },
     reset: async () => {
@@ -274,7 +274,10 @@ function createVisitorStore() {
         try {
           await fetch('/api/visitors', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 
+              'Content-Type': 'application/json',
+              'Cache-Control': 'no-cache'
+            },
             body: JSON.stringify({ visitors: initialVisitors })
           });
         } catch (err) {
@@ -289,8 +292,9 @@ function createVisitorStore() {
           );
         }
         
-        // ページをリロード
-        window.location.reload();
+        // タイムスタンプ付きでページをリロード（キャッシュバスト）
+        const timestamp = new Date().getTime();
+        window.location.href = window.location.pathname + '?v=' + timestamp;
       }
     }
   };
