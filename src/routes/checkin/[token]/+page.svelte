@@ -53,7 +53,10 @@
     const currentVisitorId = visitorTokens[currentToken];
     
     // ステータス更新
-    visitors.updateStatus(currentVisitorId, '受付');
+    await visitors.updateStatus(currentVisitorId, '受付');
+    
+    // サーバーから最新状態を取得（即座に反映）
+    await fetchLatestData();
     
     // 通知をローカルストアに送出
     notifications.add({
@@ -94,7 +97,10 @@
     const currentVisitorId = visitorTokens[currentToken];
     
     // ステータス更新
-    visitors.updateStatus(currentVisitorId, '着替え完了(施術前)');
+    await visitors.updateStatus(currentVisitorId, '着替え完了(施術前)');
+    
+    // サーバーから最新状態を取得（即座に反映）
+    await fetchLatestData();
     
     // 通知をローカルストアに送出
     notifications.add({
@@ -134,7 +140,10 @@
     const currentVisitorId = visitorTokens[currentToken];
     
     // ステータス更新
-    visitors.updateStatus(currentVisitorId, '完了');
+    await visitors.updateStatus(currentVisitorId, '完了');
+    
+    // サーバーから最新状態を取得（即座に反映）
+    await fetchLatestData();
     
     // 通知をローカルストアに送出
     notifications.add({
