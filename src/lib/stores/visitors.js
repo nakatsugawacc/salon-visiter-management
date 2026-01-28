@@ -166,13 +166,12 @@ function createVisitorStore() {
           // チェックポイント更新ロジック
           if (newStatus === '受付') {
             visitor.currentCheckpointId = 1;
-          } else if (assignRoom && !visitor.assignedRoom) {
-            // 施術部屋の割り当て
-            visitor.assignedRoom = assignRoom;
-            const roomId = assignRoom === 'A' ? 2 : assignRoom === 'B' ? 3 : 4;
-            visitor.currentCheckpointId = roomId;
           } else if (newStatus === '入室') {
-            // 入室時は割り当て済みの部屋のチェックポイント
+            // 入室時は部屋を割り当て（assignRoomが渡された場合）
+            if (assignRoom) {
+              visitor.assignedRoom = assignRoom;
+            }
+            // 割り当て済みの部屋のチェックポイントに移動
             if (visitor.assignedRoom) {
               const roomId = visitor.assignedRoom === 'A' ? 2 : visitor.assignedRoom === 'B' ? 3 : 4;
               visitor.currentCheckpointId = roomId;
@@ -183,7 +182,8 @@ function createVisitorStore() {
               const roomId = visitor.assignedRoom === 'A' ? 2 : visitor.assignedRoom === 'B' ? 3 : 4;
               visitor.currentCheckpointId = roomId;
             } else {
-              // 部屋が割り当てられていない場合は受付のまま
+              // 部屋が割り当てられていない場合（通常は発生しない）
+              console.error('部屋が割り当てられていません:', visitor);
               visitor.currentCheckpointId = 1;
             }
           } else if (newStatus === '完了') {
